@@ -53,6 +53,8 @@ public class Password {
     public static let MULTILINE_WITHOUT_LINE_BREAK_INDICATOR = ">"
     public static let MULTILINE_WITHOUT_LINE_BREAK_SEPARATOR = BLANK
 
+    private static let COMMENT_INDICATOR: Character = "#"
+
     private static let OTPAUTH = "otpauth"
     private static let OTPAUTH_URL_START = "\(OTPAUTH)://"
     private static let PASSWORD_KEYWORD = "password"
@@ -108,8 +110,11 @@ public class Password {
         // get password
         password = plainTextSplit.first ?? ""
 
-        // get remaining lines (filter out empty lines)
-        let additionalLines = plainTextSplit[1...].filter { !$0.isEmpty }
+        // get remaining lines (filter out empty lines and ignore comments)
+        let additionalLines = plainTextSplit[1...]
+            .map { $0.split(separator: Password.COMMENT_INDICATOR, maxSplits: 1, omittingEmptySubsequences: false).first ?? "" }
+            .filter { !$0.isEmpty }
+            .map(String.init)
 
         // parse lines to get key-value pairs
         parseDataFrom(lines: additionalLines)

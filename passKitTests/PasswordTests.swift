@@ -324,6 +324,38 @@ class PasswordTest: XCTestCase {
         XCTAssertTrue(does(password, contain: AdditionField(title: "unknown 2", content: "multiple lines!")))
         XCTAssertTrue(does(password, contain: noteField))
     }
+    
+    func testIgnoreComments() {
+        let passwordString = PasswordTest.PASSWORD_STRING
+        let urlPair = PasswordTest.SECURE_URL_FIELD
+        let loginPair = PasswordTest.LOGIN_FIELD
+        let usernamePair = PasswordTest.USERNAME_FIELD
+        let notePair = PasswordTest.NOTE_FIELD
+        let hintPair = PasswordTest.HINT_FIELD
+        let fileContent = """
+            \(passwordString) # a comment
+            \(urlPair.asString)
+            \(loginPair.asString)# another comment
+            \(usernamePair.asString)    # yet another comment
+            #\(notePair.asString) a complete commented out line
+            # extended to a comment block
+            \(hintPair.asString)
+            """
+        let password = getPasswordObjectWith(content: fileContent)
+        
+        XCTAssertEqual(password.password, passwordString + " # a comment")
+        XCTAssertEqual(password.plainData, fileContent.data(using: .utf8))
+        
+        XCTAssertTrue(does(password, contain: urlPair))
+        XCTAssertFalse(does(password, contain: loginPair))
+        XCTAssertFalse(does(password, contain: usernamePair))
+        XCTAssertFalse(does(password, contain: notePair))
+        XCTAssertTrue(does(password, contain: hintPair))
+        
+        XCTAssertEqual(password.urlString, urlPair.content)
+        XCTAssertEqual(password.login, loginPair.content)
+        XCTAssertEqual(password.username, usernamePair.content)
+    }
 
     private func getPasswordObjectWith(content: String, url: URL? = PasswordTest.PASSWORD_URL) -> Password {
         return Password(name: PasswordTest.PASSWORD_NAME, url: url, plainText: content)
